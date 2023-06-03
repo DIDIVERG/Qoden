@@ -40,7 +40,7 @@ namespace WebApp.Test
             AliceClient = CreateAuthorizedClientAsync("alice@mailinator.com").GetAwaiter().GetResult();
             BobClient = CreateAuthorizedClientAsync("bob@mailinator.com").GetAwaiter().GetResult();
         }
-
+        
         protected async Task<HttpClient> CreateAuthorizedClientAsync(string login)
         {
             var client = Env.WebAppHost.GetClient();

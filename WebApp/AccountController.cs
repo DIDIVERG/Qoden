@@ -1,10 +1,13 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebApp
 {
-    // TODO 4: unauthorized users should receive 401 status code
+    // TODO 4: unauthorized users should receive 401 status code 
+    // DONE
+    [Authorize]
     [Route("api/account")]
     public class AccountController : Controller
     {
@@ -15,19 +18,22 @@ namespace WebApp
             _accountService = accountService;
         }
 
-        [Authorize] 
         [HttpGet]
-        public ValueTask<Account> Get()
+        [Authorize]
+        public async ValueTask<Account> Get()
         {
-            return _accountService.LoadOrCreateAsync(null /* TODO 3: Get user id from cookie */);
+            var externalIdClaim = User.FindFirst("ExternalId");
+            var userId = externalIdClaim.Value;
+            return await _accountService.LoadOrCreateAsync(userId /* TODO 3: Get user id from cookie // DONE*/ );
         }
 
         //TODO 5: Endpoint should works only for users with "Admin" Role
-        [Authorize]
+        // DONE
+        [Authorize(Roles = "Admin")]
         [HttpGet("{id}")]
-        public Account GetByInternalId([FromRoute] int id)
+        public async ValueTask<Account> GetByInternalId([FromRoute] long id)
         {
-            return _accountService.GetFromCache(id);
+            return await _accountService.LoadOrCreateAsync(id); // нужно копать в этот метод, если со строкой он пашет то беда с числами
         }
 
         [Authorize]
@@ -36,7 +42,11 @@ namespace WebApp
         {
             //Update account in cache, don't bother saving to DB, this is not an objective of this task.
             var account = await Get();
-            account.Counter++;
+            var internalIdAccount = await GetByInternalId(account.InternalId);
+            int counter = account.Counter;
+            Interlocked.Increment(ref counter);
+            account.Counter = counter;
+            internalIdAccount.Counter = counter;
         }
     }
 }
