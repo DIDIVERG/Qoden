@@ -1,15 +1,14 @@
 # School Test App
 
-**The point of exercise** is solve as many TODOs as you can. Please Feel free to send your solution if you completed at least 4 TODOs. Every task can have a lot of different solutions, think about your code style, performance, about balance between code style and performance :), and about possible bugs.
+**Предисловие** Когда я впервые склонировал проект с гитлаба у меня компилятор ругался на миддлвейр usemvc я его убрал и переписал на useendpoints как мне посоветовал сам компилятор, еще в самом проекте теста я поменял post запрос с логином, потому что пока я это не сделал у меня я не мог  достучаться до конечной точки. Все, что я там сделал это изменил его на стандартный вид параметризированного запроса и привел параметр к станартному виду uri , так как в качестве логина там передается почта, а uri символ @ не воспринимает вроде бы. Еще добавил себе сваггер, чтобы побегать по приложению :) 
+Для всех заданий, кроме 0 я написал тесты, которые проходят.
 
 
-
-Now clone this repository and get on with the task. Good luck! ;)
-
-### Tips and useful information
-1. Solution contains 7 TODOs numbered from 0 to 6
-2. Please attach to email with solution the description of reasons of TODO6 problems if you've solved it.
-3. [Asp.Net core Authentication and Authorization](https://docs.microsoft.com/en-us/aspnet/core/security/?view=aspnetcore-3.1). **Important!** You don't really need to use Identity Framework, use cookie authentication without identity instead.
-4. [Asp.Net core Dependency injection](https://metanit.com/sharp/aspnet5/6.1.php)
-
-*Information can be updated at some point of time. In that case you will be notified by email*
+### Что как делал и решал
+0. В 0 задании было сказано, что что-то сломано в ConfigureServices. Я сначала подумал, что проблема как раз-таки с usemvc ,но потом я понял, что там не хватает сервиса AccountService, я добавил его как синглтон и все заработало. Я так понял это оно.
+1. Дальше получается у нас добавление cookie авторизации. Ну тут в принципе объяснять нечего, добавил соотвествующие сервисы и middleware для авторизации и аутентификации, добавил схему cookie. Так же в claim's передаю в куки externalid,role и name (на всякий случай).
+2. Тут тоже все просто,  возвращаю NotFound action с соответсвующим описанием ошибки. 
+3. Тут нужно вытащить из cookie клэйм externalId, который засунули в cookie на этапе генерации. Просто обращаемся к User ищем соотвествующий ключ берем оттуда значение. 
+4. Нужно было вернуть ошибку 401 если пользователь неавторизирован. Я навесил атрибут [Authorize] на весь контроллер. Также в конфигурации аутентификации нужно было добавить события на перенаправление , так как cookie авторизация аутентификация перенапраляет запросы и возвращает ошибку 302, а нам нужна ошибка 401. 
+5. Эндпоинт должен быть доступен только для админов. Когда генерировал куки я добавил туда еще и роль пользователя. Собственно, просто в арибут [Authorize] передаем параметр Roles = Admin и оно фильтрует. Опять же в конфигурации аутентификации я сделал событие на accessdenied чтобы возвращать статус код 403 вместо перенаправления.
+6. А тут проблема была в том, как я понял, что в кеше у нас 2 словаря, для строкового айдишника и для числового. Как я понял там лежат разные ссылки, так как когда я тестил это дело со строковым айдишником оно чудесно работало. В самом действии UpdateAccount вызывается метод Get() , который в свою очередь поддягивает данные из словаря по строковым ключам. И инкрементирует он, собственно только свой экземпляр класса, а числовой словарь не трогает. Я просто в UpdateAccount() по уже имеющемуся экземпляру поддтягиваю данные из словаря по числовым айдишникам считаю инкремент и присваиваю просто его двум экземплярам. 
